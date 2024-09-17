@@ -1,0 +1,48 @@
+name: Deploy to Server
+
+on:
+  push:
+    branches:
+      - main  # Changez si vous déployez depuis une autre branche
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'  # Remplacez par votre version de Node.js
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Build application
+        run: npm run build  # Si applicable
+
+      - name: Add SSH key
+        uses: shimataro/ssh-key-action@v2
+        with:
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          known_hosts: '173.249.3.40'
+
+      - name: Copy files to server
+        run: |
+          rsync -avz -e "ssh -o StrictHostKeyChecking=no" ./ root@173.249.3.40:/var/www/yourapp
+
+      - name: Create .env file on server
+        run: |
+          ssh root@173.249.3.40 "echo 'ACCESS_KEY=${{ secrets.ACCESS_KEY }}' > /var/www/yourapp/.env"
+          ssh root@173.249.3.40 "echo 'SECRET_KEY=${{ secrets.SECRET_KEY }}' >> /var/www/yourapp/.env"
+          ssh root@173.249.3.40 "echo 'USER_NAME=${{ secrets.USER_NAME }}' >> /var/www/yourapp/.env"
+          ssh root@173.249.3.40 "echo 'PASSWORD=${{ secrets.PASSWORD }}' >> /var/www/yourapp/.env"
+
+      - name: Install dependencies on server
+        run: ssh root@173.249.3.40 "cd /var/www/yourapp && npm install --production"
+
+      - name: Restart application
+        run: ssh root@173.249.3.40 "pm2 restart all || pm2 start /var/www/yourapp/index.js --name yourapp"

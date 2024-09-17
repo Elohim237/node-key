@@ -21,8 +21,9 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build application
-        run: npm run build  # Si applicable
+      # Supprimer ou commenter cette étape si elle n'est pas nécessaire
+      # - name: Build application
+      #   run: npm run build
 
       - name: Add SSH key
         uses: shimataro/ssh-key-action@v2

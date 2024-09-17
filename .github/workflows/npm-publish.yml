@@ -1,4 +1,4 @@
-name: Deploy to Server
+name: Déploiement sur le serveur
 
 on:
   push:
@@ -10,37 +10,32 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout code
+      - name: Vérifier le code
         uses: actions/checkout@v3
 
-      - name: Install Node.js
+      - name: Installer Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '20'  # Replace with your Node.js version
+          node-version: '16'
 
-      - name: Install dependencies
+      - name: Installer les dépendances
         run: npm install
 
-      - name: Start SSH agent and add key manually
+      - name: Copier les fichiers sur le serveur avec mot de passe
         run: |
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > private_key
-          chmod 600 private_key
-          eval $(ssh-agent -s)
-          ssh-add private_key
+          SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e rsync -avz -e "ssh -o StrictHostKeyChecking=no" ./ root@173.249.3.40:/var/www/yourapp
 
-      - name: Copy files to server
+      - name: Créer le fichier .env sur le serveur
         run: |
-          rsync -avz -e "ssh -o StrictHostKeyChecking=no" ./ root@173.249.3.40:/var/www/yourapp
+          SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "echo 'ACCESS_KEY=${{ secrets.ACCESS_KEY }}' > /var/www/yourapp/.env"
+          SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "echo 'SECRET_KEY=${{ secrets.SECRET_KEY }}' >> /var/www/yourapp/.env"
+          SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "echo 'USER_NAME=${{ secrets.USER_NAME }}' >> /var/www/yourapp/.env"
+          SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "echo 'PASSWORD=${{ secrets.PASSWORD }}' >> /var/www/yourapp/.env"
 
-      - name: Create .env file on server
+      - name: Installer les dépendances sur le serveur
         run: |
-          ssh -o StrictHostKeyChecking=no root@173.249.3.40 "echo 'ACCESS_KEY=${{ secrets.ACCESS_KEY }}' > /var/www/yourapp/.env"
-          ssh -o StrictHostKeyChecking=no root@173.249.3.40 "echo 'SECRET_KEY=${{ secrets.SECRET_KEY }}' >> /var/www/yourapp/.env"
-          ssh -o StrictHostKeyChecking=no root@173.249.3.40 "echo 'USER_NAME=${{ secrets.USER_NAME }}' >> /var/www/yourapp/.env"
-          ssh -o StrictHostKeyChecking=no root@173.249.3.40 "echo 'PASSWORD=${{ secrets.PASSWORD }}' >> /var/www/yourapp/.env"
+          SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "cd /var/www/yourapp && npm install --production"
 
-      - name: Install dependencies on server
-        run: ssh -o StrictHostKeyChecking=no root@173.249.3.40 "cd /var/www/yourapp && npm install --production"
-
-      - name: Restart application
-        run: ssh -o StrictHostKeyChecking=no root@173.249.3.40 "pm2 restart all || pm2 start /var/www/yourapp/index.js --name yourapp"
+      - name: Redémarrer l'application
+        run: |
+          SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "pm2 restart all || pm2 start /var/www/yourapp/index.js --name yourapp"

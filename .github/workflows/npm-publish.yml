@@ -34,7 +34,8 @@ jobs:
 
       - name: Installer les dépendances sur le serveur
         run: |
-         SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "/root/.nvm/versions/node/v20.17.0/bin/npm install --production --prefix /var/www/yourapp"
+          SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "source /root/.nvm/nvm.sh && nvm use 20.17.0 && npm install --production --prefix /var/www/yourapp"
+
 
       - name: Redémarrer l'application
         run: |

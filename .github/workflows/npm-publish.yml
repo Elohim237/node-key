@@ -39,5 +39,5 @@ jobs:
 
       - name: Redémarrer l'application avec PM2
         run: |
-          SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "source /root/.nvm/nvm.sh && nvm use 20.17.0 && pm2 restart all || pm2 start /var/www/yourapp/index.js --name yourapp"
+         SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "source /root/.nvm/nvm.sh && nvm use 20.17.0 && pm2 restart all || pm2 start /var/www/yourapp/server.js --name yourapp"
 

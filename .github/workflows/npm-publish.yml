@@ -1,0 +1,43 @@
+name: Déploiement sur le serveur
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Vérifier le code
+        uses: actions/checkout@v3
+
+      - name: Installer Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '20'
+
+      - name: Installer les dépendances
+        run: npm install
+
+      - name: Copier les fichiers sur le serveur avec mot de passe
+        run: |
+          SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e rsync -avz -e "ssh -o StrictHostKeyChecking=no" ./ root@173.249.3.40:/var/www/yourapp
+
+      - name: Créer le fichier .env sur le serveur
+        run: |
+          SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "echo 'ACCESS_KEY=${{ secrets.ACCESS_KEY }}' > /var/www/yourapp/.env"
+          SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "echo 'SECRET_KEY=${{ secrets.SECRET_KEY }}' >> /var/www/yourapp/.env"
+          SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "echo 'USER_NAME=${{ secrets.USER_NAME }}' >> /var/www/yourapp/.env"
+          SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "echo 'PASSWORD=${{ secrets.PASSWORD }}' >> /var/www/yourapp/.env"
+
+      - name: Installer les dépendances sur le serveur
+        run: |
+          SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "source /root/.nvm/nvm.sh && nvm use 20.17.0 && npm install --production --prefix /var/www/yourapp"
+
+
+      - name: Redémarrer l'application avec PM2
+        run: |
+         SSHPASS="${{ secrets.SERVER_PASSWORD }}" sshpass -e ssh -o StrictHostKeyChecking=no root@173.249.3.40 "source /root/.nvm/nvm.sh && nvm use 20.17.0 && pm2 restart all || pm2 start /var/www/yourapp/server.js --name yourapp"
+

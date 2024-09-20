@@ -13,5 +13,5 @@ module.exports = {
   username: process.env.USER_NAME,
   password: process.env.PASSWORD,
   jwtSecret: process.env.JWT_SECRET || 'secret', // Clé secrète pour JWT
-  port: process.env.PORT || 3001,
+  port: process.env.PORT || 3002,
 };
